@@ -1,0 +1,30 @@
+## Build e Artefatos de Saída
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Arquivos e Pastas do Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Arquivos do Ambiente e Chaves de Configuração Local
+appsettings.Development.json
+*.local.json
+
+## Pacotes NuGet restaurados localmente
+*.nupkg
+**/packages/
+
+## Arquivos de IDEs alternativas (VS Code, Rider, etc.)
+.vscode/
+.idea/
+
+## Sistema Operacional
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

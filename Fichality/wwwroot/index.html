@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fichality - Editor de Ficha Dinâmica</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121214;
+            color: #e1e1e6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #202024;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #29292e;
+        }
+
+        h1, h2 {
+            color: #8257e5;
+            margin-top: 0;
+        }
+
+        .header-ficha {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #a8a8b3;
+        }
+
+        input, select, textarea {
+            background-color: #121214;
+            border: 1px solid #29292e;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .blocos-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bloco {
+            background-color: #29292e;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #8257e5;
+        }
+
+        .bloco-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+            .bloco-header input {
+                font-weight: bold;
+                width: 60%;
+            }
+
+        .btn {
+            background-color: #8257e5;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+            .btn:hover {
+                background-color: #996dff;
+            }
+
+        .btn-danger {
+            background-color: #e55151;
+        }
+
+            .btn-danger:hover {
+                background-color: #ff6b6b;
+            }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #8257e5;
+            color: #8257e5;
+        }
+
+            .btn-outline:hover {
+                background-color: #8257e5;
+                color: #fff;
+            }
+
+        .acoes {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .json-preview {
+            margin-top: 30px;
+            background-color: #121214;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            color: #00e676;
+            border: 1px solid #29292e;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎲 Fichality - Ficha Dinâmica</h1>
+        <p>Monte a ficha do seu personagem com blocos customizados em tempo real.</p>
+
+        <div class="header-ficha">
+            <div class="form-group">
+                <label for="nomePersonagem">Nome do Personagem:</label>
+                <input type="text" id="nomePersonagem" placeholder="Ex: Eldrin das Sombras">
+            </div>
+            <div class="form-group">
+                <label for="sistemaRpg">Sistema de RPG:</label>
+                <input type="text" id="sistemaRpg" placeholder="Ex: D&D 5e, Tormenta20">
+            </div>
+        </div>
+
+        <hr style="border-color: #29292e; margin: 20px 0;">
+
+        <h2>Blocos Personalizados da Ficha</h2>
+        <div id="blocosContainer" class="blocos-container"></div>
+
+        <button class="btn btn-outline" onclick="adicionarBloco()" style="margin-top: 15px;">+ Adicionar Novo Bloco</button>
+
+        <div class="acoes">
+            <button class="btn" onclick="salvarFichaNoBackend()">💾 Salvar Ficha no Banco (API)</button>
+        </div>
+
+        <h3>Visualização do JSON Gerado (Coluna NVARCHAR(MAX)):</h3>
+        <div class="json-preview" id="jsonPreview">{}</div>
+    </div>
+
+    <script>
+        // Estrutura em memória dos blocos dinâmicos
+        let estruturaFicha = [
+            { titulo: "Atributos Principais", conteudo: "Força: 16 (+3)\nDestreza: 14 (+2)\nConstituição: 12 (+1)" },
+            { titulo: "Habilidades & Magias", conteudo: "Ataque Furioso, Visão no Escuro, Bola de Fogo" }
+        ];
+
+        // Renderiza os blocos na tela
+        function renderizarBlocos() {
+            const container = document.getElementById('blocosContainer');
+            container.innerHTML = '';
+
+            estruturaFicha.forEach((bloco, index) => {
+                const div = document.createElement('div');
+                div.className = 'bloco';
+                div.innerHTML = `
+                    <div class="bloco-header">
+                        <input type="text" value="${bloco.titulo}" onchange="atualizarBloco(${index}, 'titulo', this.value)">
+                        <button class="btn btn-danger" onclick="removerBloco(${index})">Excluir</button>
+                    </div>
+                    <textarea rows="3" style="width: 100%;" onchange="atualizarBloco(${index}, 'conteudo', this.value)">${bloco.conteudo}</textarea>
+                `;
+                container.appendChild(div);
+            });
+
+            atualizarJsonPreview();
+        }
+
+        function adicionarBloco() {
+            estruturaFicha.push({ titulo: "Novo Bloco", conteudo: "Digite as informações aqui..." });
+            renderizarBlocos();
+        }
+
+        function removerBloco(index) {
+            estruturaFicha.splice(index, 1);
+            renderizarBlocos();
+        }
+
+        function atualizarBloco(index, campo, valor) {
+            estruturaFicha[index][campo] = valor;
+            atualizarJsonPreview();
+        }
+
+        function atualizarJsonPreview() {
+            document.getElementById('jsonPreview').innerText = JSON.stringify(estruturaFicha, null, 2);
+        }
+
+        // DISPARO PARA A SUA API EM C# (PERSISTÊNCIA REAL NO SQL SERVER)
+        async function salvarFichaNoBackend() {
+            const nome = document.getElementById('nomePersonagem').value;
+            const sistema = document.getElementById('sistemaRpg').value;
+
+            if (!nome || !sistema) {
+                alert('Preencha o Nome e o Sistema!');
+                return;
+            }
+
+            const jsonString = JSON.stringify(estruturaFicha);
+
+            try {
+                // 1. Cria a ficha para o Usuário 1 (exemplo)
+                const resCriar = await fetch('/api/ficha/criar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nomePersonagem: nome, sistemaRpg: sistema, usuarioId: 1 })
+                });
+
+                const dataCriar = await resCriar.json();
+
+                if (dataCriar.sucesso) {
+                    // 2. Salva a estrutura JSON na coluna NVARCHAR(MAX)
+                    const resEstrutura = await fetch('/api/ficha/salvar-estrutura', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fichaId: dataCriar.fichaId, estruturaJson: jsonString })
+                    });
+
+                    const dataEstrutura = await resEstrutura.json();
+                    alert(dataEstrutura.mensagem + ' (ID da Ficha: ' + dataCriar.fichaId + ')');
+                } else {
+                    alert('Erro ao criar ficha.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao conectar com a API C#.');
+            }
+        }
+
+        // Inicializa na tela
+        renderizarBlocos();
+    </script>
+</body>
+</html>

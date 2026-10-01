@@ -1,0 +1,6 @@
+@Fichality_HostAddress = http://localhost:5053
+
+GET {{Fichality_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
